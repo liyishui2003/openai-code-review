@@ -1,0 +1,2 @@
+Manifest-Version: version:1.0
+Main-Class: Y1SHUI.sdk.OpenAiCodeReview
