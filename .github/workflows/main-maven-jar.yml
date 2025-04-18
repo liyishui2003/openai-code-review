@@ -1,4 +1,4 @@
-name: Build and Run OpenAiCodeReview
+name: Build and Run OpenAiCodeReview By Main Maven Jar
 
 on:
   push:
@@ -14,82 +14,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # 获取完整历史记录
+          fetch-depth: 2
 
       - name: Set up JDK 11
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v2
         with:
-          distribution: 'temurin'
+          distribution: 'adopt'
           java-version: '11'
-          cache: 'maven'
 
-      - name: Setup Maven mirror (Aliyun)
-        run: |
-          mkdir -p ~/.m2
-          cat > ~/.m2/settings.xml <<EOF
-          <settings>
-            <mirrors>
-              <mirror>
-                <id>aliyun</id>
-                <name>Aliyun Maven Mirror</name>
-                <url>https://maven.aliyun.com/repository/public</url>
-                <mirrorOf>central</mirrorOf>
-              </mirror>
-            </mirrors>
-            <profiles>
-              <profile>
-                <id>ci</id>
-                <activation>
-                  <activeByDefault>true</activeByDefault>
-                </activation>
-                <properties>
-                  <maven.compiler.source>11</maven.compiler.source>
-                  <maven.compiler.target>11</maven.compiler.target>
-                </properties>
-              </profile>
-            </profiles>
-          </settings>
-          EOF
+      - name: Build with Maven
+        run: mvn clean install
 
-      - name: Clean and build with Maven
-        run: |
-          # 彻底清理环境
-          mvn clean
-          rm -rf ~/.m2/repository/com/alibaba/
-          rm -rf ~/.m2/repository/com/auth0/
-          rm -rf ~/.m2/repository/com/google/
-          
-          # 强制更新依赖并构建
-          mvn -B -U clean install -Dmaven.test.skip=true
+      - name: Copy openai-code-review-sdk JAR
+        run: mvn dependency:copy -Dartifact=Y1SHUI:openai-code-review-sdk:1.0 -DoutputDirectory=./libs
 
-      - name: Verify dependencies
-        run: |
-          echo "===== Installed Dependencies ====="
-          ls -la ~/.m2/repository/com/alibaba/fastjson2/
-          ls -la ~/.m2/repository/com/auth0/java-jwt/
-          ls -la ~/.m2/repository/com/google/guava/
-          echo "================================="
-
-      - name: Copy and run JAR
-        run: |
-          # 创建输出目录
-          mkdir -p ./target/libs
-          
-          # 复制主JAR文件
-          mvn dependency:copy -Dartifact=Y1SHUI:openai-code-review-sdk:1.0 -DoutputDirectory=./target/libs
-          
-          # 复制所有依赖JAR
-          mvn dependency:copy-dependencies -DoutputDirectory=./target/libs
-          
-          # 运行程序（包含所有依赖）
-          java -cp "./target/libs/*" Y1SHUI.sdk.OpenAiCodeReview
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: openai-code-review
-          path: |
-            ./target/libs/*.jar
-            ./target/*.jar
+      - name: Run Code Review
+        run: java -jar ./libs/openai-code-review-sdk-1.0.jar

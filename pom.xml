@@ -8,6 +8,7 @@
     <artifactId>openai-code-review</artifactId>
     <version>1.0</version>
     <packaging>pom</packaging>
+
     <modules>
         <module>openai-code-review-sdk</module>
         <module>openai-code-review-test</module>
@@ -44,8 +45,8 @@
                 <version>1.15</version>
             </dependency>
             <dependency>
-                <groupId>com.alibaba.fastjson2</groupId>
-                <artifactId>fastjson2</artifactId>
+                <groupId>com.alibaba</groupId>
+                <artifactId>fastjson</artifactId>
                 <version>2.0.49</version>
             </dependency>
             <dependency>
@@ -53,12 +54,6 @@
                 <artifactId>junit</artifactId>
                 <version>4.13.1</version>
                 <scope>test</scope>
-            </dependency>
-            <!-- JWT 鉴权 -->
-            <dependency>
-                <groupId>com.auth0</groupId>
-                <artifactId>java-jwt</artifactId>
-                <version>4.2.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
