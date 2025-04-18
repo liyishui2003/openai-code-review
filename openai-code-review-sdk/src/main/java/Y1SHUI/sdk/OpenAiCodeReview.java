@@ -20,6 +20,7 @@ public class OpenAiCodeReview {
          * 这里之所以还需要运行检出命令是因为github action做的是把代码拷贝到工作区
          * 并不能直接得到代码的前后差异
          * */
+
         // 1. 代码检出
         ProcessBuilder processBuilder = new ProcessBuilder("git", "diff", "HEAD~1", "HEAD");
         processBuilder.directory(new File("."));
