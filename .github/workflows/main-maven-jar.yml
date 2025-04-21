@@ -31,6 +31,9 @@ jobs:
         run: mvn dependency:copy -Dartifact=Y1SHUI:openai-code-review-sdk:1.0 -DoutputDirectory=./libs
 
       - name: Run Code Review
-        run: java -jar ./libs/openai-code-review-sdk-1.0.jar
+        run: |
+          java -jar ./libs/openai-code-review-sdk-1.0.jar
+          echo "===== 目录结构 ====="
+          ls -R repo  # 递归列出 repo 目录下的所有内容
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

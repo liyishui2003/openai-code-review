@@ -130,14 +130,18 @@ public class OpenAiCodeReview {
         //在本地新建文件夹
         String dateFolderName = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         File dateFolder = new  File("repo/" + dateFolderName);
-        if(!dateFolder.exists()){
+        if (!dateFolder.exists()) {
             dateFolder.mkdirs();
+            System.out.println("[DEBUG] 创建文件夹: " + dateFolder.getAbsolutePath()); // 打印路径
+        } else {
+            System.out.println("[DEBUG] 文件夹已存在: " + dateFolder.getAbsolutePath());
         }
 
         String fileName = generateRandomString(12) + ".md";
         File newFile = new File(dateFolder,fileName);
-        try(FileWriter writer = new FileWriter(newFile)){
+        try (FileWriter writer = new FileWriter(newFile)) {
             writer.write(log);
+            System.out.println("[DEBUG] 文件已写入: " + newFile.getAbsolutePath()); // 打印文件路径
         }
 
         //git提交
