@@ -1,20 +1,35 @@
 package Y1SHUI.sdk;
 
+import Y1SHUI.sdk.domain.model.model.ChatCompletionRequest;
 import Y1SHUI.sdk.domain.model.model.ChatCompletionSyncResponse;
+import Y1SHUI.sdk.domain.model.model.Model;
 import Y1SHUI.sdk.type.utils.BearerTokenUtils;
 import com.alibaba.fastjson2.JSON;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
+import javax.jws.WebParam;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Random;
+import java.util.logging.SimpleFormatter;
 
 public class OpenAiCodeReview {
 
     public static void main(String[] args) throws  Exception{
-        System.out.println("测试执行");
+        System.out.println("openai 代码评审，测试执行");
+
+        String token = System.getenv("GITHUB_TOKEN");
+        if(null == token || token.isEmpty()){
+            throw new RuntimeException("token is null");
+        }
 
         /*
          * 这里之所以还需要运行检出命令是因为github action做的是把代码拷贝到工作区
@@ -44,6 +59,10 @@ public class OpenAiCodeReview {
         //2.代码评审
         String log = codeReview(diffCode.toString());
         System.out.println("code review: "+ log);
+
+        //3.写入评审日志
+        String logUrl = writeLog(token,log);
+        System.out.println("writeLog: "+ logUrl);
     }
 
     private static String codeReview(String diffCode) throws IOException {
@@ -59,22 +78,22 @@ public class OpenAiCodeReview {
         httpURLConnection.setRequestProperty("User-Agent","Mozilla/4.0 (compatible; MSIE 5.0; Windows NT; DigExt)");
         httpURLConnection.setDoOutput(true);
 
-        String jsonInpuString = "{"
-                + "\"model\":\"glm-4-flash\","
-                + "\"messages\": ["
-                + "    {"
-                + "        \"role\": \"user\","
-                + "        \"content\": \"你是一个高级编程架构师，精通各类场景方案、架构设计和编程语言请，请您根据git diff记录，对代码做出评审。代码为: " + diffCode + "\""
-                + "    }"
-                + "]"
-                + "}";
 
+        ChatCompletionRequest chatCompletionRequest = new ChatCompletionRequest();
+        chatCompletionRequest.setModel(Model.GLM_4_FLASH.getCode());
+        chatCompletionRequest.setMessages(new ArrayList<ChatCompletionRequest.Prompt>() {
+            private static final long serialVersionUID = -7988151926241837899L;
+            {
+                add(new ChatCompletionRequest.Prompt("user","你是一个高级编程架构师，精通各类场景方案、架构设计和编程语言请，请您根据git diff记录，对代码做出评审。代码如下:"));
+                add(new ChatCompletionRequest.Prompt("user",diffCode));
+            }
+        });
         /*
          * 向 HTTP 连接（connection）的输出流（OutputStream）写入 JSON 数据，通常用于 POST/PUT 请求的请求体发送。
          * 转化成byte是因为网络是面向字节流的
          * */
         try(OutputStream os = httpURLConnection.getOutputStream()){
-            byte[] input = jsonInpuString.getBytes(StandardCharsets.UTF_8);
+            byte[] input = JSON.toJSONString(chatCompletionRequest).getBytes(StandardCharsets.UTF_8);
             os.write(input);
         }
 
@@ -101,5 +120,46 @@ public class OpenAiCodeReview {
         ChatCompletionSyncResponse response = JSON.parseObject(content.toString(), ChatCompletionSyncResponse.class);
         System.out.println(response.getChoices().get(0).getMessage().getContent());
         return response.getChoices().get(0).getMessage().getContent();
+    }
+
+    private static String writeLog(String token,String log) throws Exception{
+        //克隆远程仓库到本地
+        Git git = Git.cloneRepository()
+                .setURI("https://github.com/liyishui2003/openai-code-review-log.git")
+                .setDirectory(new File("repo"))
+                .setCredentialsProvider(new UsernamePasswordCredentialsProvider("token",""))
+                .call();
+
+        //在本地新建文件夹
+        String dateFolderName = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        File dateFolder = new  File("repo/" + dateFolderName);
+        if(!dateFolder.exists()){
+            dateFolder.mkdirs();
+        }
+
+        String fileName = generateRandomString(12) + ".md";
+        File newFile = new File(dateFolder,fileName);
+        try(FileWriter writer = new FileWriter(newFile)){
+            writer.write(log);
+        }
+
+        //git提交
+        git.add().addFilepattern(dateFolderName + "/" + fileName).call();
+        git.commit().setMessage("Add new file via GitHub Actions").call();
+        git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(token,""));
+        System.out.println("Changes have been pushed to the repository");
+
+        return "https://github.com/liyishui2003/openai-code-review-log/blob/master" + dateFolderName +"/" + fileName;
+
+    }
+
+    private static String generateRandomString(int length){
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder(length);
+        for(int i = 0;i < length; i++){
+            sb.append(characters.charAt(random.nextInt(characters.length())));
+        }
+        return sb.toString();
     }
 }
