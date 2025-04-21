@@ -162,7 +162,7 @@ public class OpenAiCodeReview {
         String output = new BufferedReader(new InputStreamReader(process.getInputStream()))
                 .lines().collect(Collectors.joining("\n"));
 
-
+        //论 code_token 和 github_token 的区别
         if (output.contains(latestCommit)) {
             System.out.println("✅ 推送成功，远程分支已更新！");
         } else {

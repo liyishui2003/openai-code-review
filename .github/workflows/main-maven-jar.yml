@@ -36,4 +36,4 @@ jobs:
           echo "===== 目录结构 ====="
           ls -R repo  # 递归列出 repo 目录下的所有内容
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CODE_TOKEN }}
