@@ -16,6 +16,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class OpenAiCodeReview {
 
@@ -23,7 +24,7 @@ public class OpenAiCodeReview {
         System.out.println("openai 代码评审，测试执行");
 
         String token = System.getenv("GITHUB_TOKEN");
-        if(null == token || token.isEmpty()){
+        if (null == token || token.isEmpty()) {
             throw new RuntimeException("token is null");
         }
 
@@ -123,7 +124,6 @@ public class OpenAiCodeReview {
         Git git = Git.cloneRepository()
                 .setURI("https://github.com/liyishui2003/openai-code-review-log.git")
                 .setDirectory(new File("repo"))
-                .setBranch("main") // 显式指定分支（与远程一致）
                 .setCredentialsProvider(new UsernamePasswordCredentialsProvider("token",""))
                 .call();
 
@@ -144,12 +144,29 @@ public class OpenAiCodeReview {
             System.out.println("[DEBUG] 文件已写入: " + newFile.getAbsolutePath()); // 打印文件路径
         }
 
-        //git提交
+
         git.add().addFilepattern(dateFolderName + "/" + fileName).call();
         git.commit().setMessage("Add new file via GitHub Actions").call();
-        git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(token,""));
-        System.out.println("Changes have been pushed to the repository");
+        git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(token, "")).call();
 
+        // 打印部分 token（前4位 + 后4位）用于调试
+        System.out.println("[DEBUG] Token (masked): "
+                + (token != null ? token.substring(0, 4) + "****" + token.substring(token.length() - 4) : "null"));
+
+        // 检查远程分支是否有最新提交（绕过 PushResult）
+        String branchName = git.getRepository().getBranch();
+        String latestCommit = git.getRepository().findRef("HEAD").getObjectId().getName();
+
+        ProcessBuilder checkRemote = new ProcessBuilder("git", "ls-remote", "origin", branchName);
+        Process process = checkRemote.start();
+        String output = new BufferedReader(new InputStreamReader(process.getInputStream()))
+                .lines().collect(Collectors.joining("\n"));
+
+        if (output.contains(latestCommit)) {
+            System.out.println("✅ 推送成功，远程分支已更新！");
+        } else {
+            System.out.println("❌ 推送失败，远程分支无变更！");
+        }
         return "https://github.com/liyishui2003/openai-code-review-log/blob/main/" + dateFolderName +"/" + fileName;
 
     }
