@@ -145,7 +145,7 @@ public class OpenAiCodeReview {
         git.push().setCredentialsProvider(new UsernamePasswordCredentialsProvider(token,""));
         System.out.println("Changes have been pushed to the repository");
 
-        return "https://github.com/liyishui2003/openai-code-review-log/blob/master" + dateFolderName +"/" + fileName;
+        return "https://github.com/liyishui2003/openai-code-review-log/blob/master/" + dateFolderName +"/" + fileName;
 
     }
 
