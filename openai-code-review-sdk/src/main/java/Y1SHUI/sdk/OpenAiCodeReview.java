@@ -162,6 +162,7 @@ public class OpenAiCodeReview {
         String output = new BufferedReader(new InputStreamReader(process.getInputStream()))
                 .lines().collect(Collectors.joining("\n"));
 
+
         if (output.contains(latestCommit)) {
             System.out.println("✅ 推送成功，远程分支已更新！");
         } else {
