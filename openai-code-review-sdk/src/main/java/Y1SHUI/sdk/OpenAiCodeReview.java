@@ -123,6 +123,7 @@ public class OpenAiCodeReview {
         Git git = Git.cloneRepository()
                 .setURI("https://github.com/liyishui2003/openai-code-review-log.git")
                 .setDirectory(new File("repo"))
+                .setBranch("main") // 显式指定分支（与远程一致）
                 .setCredentialsProvider(new UsernamePasswordCredentialsProvider("token",""))
                 .call();
 
