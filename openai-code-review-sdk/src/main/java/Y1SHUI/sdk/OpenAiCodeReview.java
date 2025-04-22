@@ -75,6 +75,7 @@ public class OpenAiCodeReview {
 
         Message message = new Message();
         message.put("project","small-pay");
+        System.out.println("Message Url：" + logUrl);
         message.put("review",logUrl);
         message.setUrl(logUrl);
 
